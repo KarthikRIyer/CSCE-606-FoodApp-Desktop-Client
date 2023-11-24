@@ -56,6 +56,8 @@ public class LoginView extends JFrame {
                 JOptionPane.showMessageDialog(null, "Credentials/UserType mismatch!");
             }
             else {
+                Application.getInstance().setToken(user.getToken());
+                Application.getInstance().setUserId(user.getUserId());
                 Application.getInstance().setCurrentUser(user);
                 setVisible(false);
                 switch (user.getUserType()) {
