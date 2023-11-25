@@ -1,5 +1,6 @@
 package com.foodapp;
 
+import com.foodapp.controller.DeliveryAgentController;
 import com.foodapp.controller.LoginController;
 import com.foodapp.model.User;
 import com.foodapp.view.CustomerView;
@@ -22,13 +23,15 @@ public class Application {
     private CustomerView customerView;
     private RestaurantView restaurantView;
     private DeliveryAgentView deliveryAgentView;
+    private DeliveryAgentController deliveryAgentController;
 
     public Application() {
         this.loginController = new LoginController(FOOD_APP_URL);
         this.loginView = new LoginView(loginController);
         this.customerView = new CustomerView();
         this.restaurantView = new RestaurantView();
-        this.deliveryAgentView = new DeliveryAgentView();
+        this.deliveryAgentController = new DeliveryAgentController(FOOD_APP_URL);
+        this.deliveryAgentView = new DeliveryAgentView(deliveryAgentController);
     }
 
     public static Application getInstance() {

@@ -24,4 +24,10 @@ public class JsonUtil {
         return objectMapper.readValue(json, clazz);
     }
 
+    public static <T> T fromJson(String json, TypeReference<T> type) throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.findAndRegisterModules();
+        return objectMapper.readValue(json, type);
+    }
+
 }

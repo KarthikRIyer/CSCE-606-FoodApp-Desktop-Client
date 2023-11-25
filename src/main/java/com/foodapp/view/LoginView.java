@@ -67,7 +67,10 @@ public class LoginView extends JFrame {
                             Application.getInstance().getRestaurantView().setVisible(true);
                     case "DELIVERY" ->
 //                    Application.getInstance().getDeliveryAgentView().loadUserData();
-                            Application.getInstance().getDeliveryAgentView().setVisible(true);
+                            {
+                                Application.getInstance().getDeliveryAgentView().setVisible(true);
+                                Application.getInstance().getDeliveryAgentView().loadData();
+                            }
                 }
 //                JOptionPane.showMessageDialog(null, "Login Successful!");
             }
