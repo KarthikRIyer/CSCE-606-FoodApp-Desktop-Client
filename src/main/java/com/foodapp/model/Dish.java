@@ -7,6 +7,7 @@ public class Dish {
     private int restaurantId;
     private int dishId;
     private int quantity = 0;
+    private String image;
 
     public String getName() {
         return name;
@@ -54,5 +55,13 @@ public class Dish {
 
     public void setQuantity(int quantity) {
         this.quantity = quantity;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
     }
 }

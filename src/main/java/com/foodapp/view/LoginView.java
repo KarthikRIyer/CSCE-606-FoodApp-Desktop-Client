@@ -66,7 +66,12 @@ public class LoginView extends JFrame {
                             Application.getInstance().getCustomerView().setVisible(true);
                     case "RESTAURANT" ->
 //                    Application.getInstance().getRestaurantView().loadUserData();
+                        {
+                            Application.getInstance().getRestaurantView().loadData();
+                            Application.getInstance().getRestaurantView().loadorder();
                             Application.getInstance().getRestaurantView().setVisible(true);
+                        }
+
                     case "DELIVERY" ->
 //                    Application.getInstance().getDeliveryAgentView().loadUserData();
                             {

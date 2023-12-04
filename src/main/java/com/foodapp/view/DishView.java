@@ -1,4 +1,6 @@
 package com.foodapp.view;
+import com.foodapp.model.Order;
+import com.foodapp.model.User;
 import com.foodapp.util.SpringUtilities;
 
 import com.foodapp.Application;
@@ -7,13 +9,17 @@ import com.foodapp.model.Dish;
 import com.foodapp.model.restuarant;
 import com.foodapp.util.SpringUtilities;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -26,98 +32,132 @@ import java.net.URISyntaxException;
 import java.util.*;
 import java.util.List;
 
-public class DishView extends JFrame implements ActionListener{
+public class DishView extends JFrame{
     private DishController dishController;
-    private JPanel main;
+    private JPanel dishsPanel;
+    private List<Dish> dish;
     private int[] counts;
     private JLabel[] countLabels;
-    private List<Dish> dish;
-    private JButton loadish = new JButton("Welcome to Dishes Page! Click to load Dishes!");
-    private JButton paybill = new JButton("Go to Payment");
     public DishView(DishController dishController){
         this.dishController = dishController;
+        this.setupLayout();
+    }
+
+    private void setupLayout() {
         this.setLayout(new BoxLayout(this.getContentPane(), BoxLayout.Y_AXIS));
         this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        this.setSize(400, 300);
-        JLabel title = new JLabel("Customer View");
+        this.setSize(800, 600);
+        JLabel title = new JLabel("Dishes Page");
         title.setFont(new Font("Sans Serif", Font.BOLD, 24));
         JPanel panelTitle = new JPanel();
         panelTitle.add(title);
         this.getContentPane().add(panelTitle);
 
-        main = new JPanel();
-        main.add(loadish);
-        main.add(paybill);
-        SpringUtilities.makeCompactGrid(main,
-                3, 2, //rows, cols
-                6, 6,        //initX, initY
-                6, 6);       //xPad, yPad
-        this.getContentPane().add(main);
-        loadish.addActionListener(this);
-        paybill.addActionListener(this);
-        //this.updateTable();
+        dishsPanel = new JPanel();
+        dishsPanel.setLayout(new BoxLayout(dishsPanel, BoxLayout.Y_AXIS));
+
+        JScrollPane dishPane = new JScrollPane(dishsPanel);
+        this.getContentPane().add(dishPane);
     }
 
-    public void actionPerformed(ActionEvent e) {
-        if (e.getSource() == loadish){
-            try {
-                getdishes();
-            } catch (URISyntaxException ex) {
-                throw new RuntimeException(ex);
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            } catch (InterruptedException ex) {
-                throw new RuntimeException(ex);
-            }
-        }
-        else if(e.getSource() == paybill){
-            gotobill();
-        }
-    }
-
-    private void getdishes() throws URISyntaxException, IOException, InterruptedException {
+    public void loadData() {
         String token = Application.getInstance().getToken();
         int id = Application.getInstance().getUserId();
         int rid = Application.getInstance().getRestaurantId();
-        dish = dishController.getdish(token,id,rid);
-        updateTable();
+        try {
+            dish = dishController.getdish(token,id,rid);
+            updateView();
+        } catch (Exception e) {
+            System.out.println("Could not fetch order data");
+            e.printStackTrace();
+        }
     }
 
+    private void updateView(){
+        this.dishsPanel.removeAll();
+        List<JPanel> dishPanels = new ArrayList<>();
 
-    private void updateTable(){
-        System.out.println(dish);
         int numberOfCounters = dish.size();
         counts = new int[numberOfCounters];
         countLabels = new JLabel[numberOfCounters];
         int i=0;
 
-        for (Dish item: dish){
-            JPanel dlist = new JPanel();
-            countLabels[i] = new JLabel(String.valueOf(counts[i]));
-            JButton incrementButton = new JButton("+");
-            JButton decrementButton = new JButton("-");
-            int finalI = i;
+        for (Dish item: dish) {
+            try {
+                JPanel dishPanel = new JPanel();
+                dishPanel.setLayout(new BoxLayout(dishPanel, BoxLayout.X_AXIS));
 
-            incrementButton.addActionListener(e -> {
-                item.setQuantity(item.getQuantity()+1);
-                counts[finalI]++;
-                updateLabel(finalI);
-            });
+                int width = 200;
+                int height = 100;
+                String base64Image = item.getImage().split(",")[1];
+                byte[] imgBytes = Base64.getDecoder().decode(base64Image);
+                BufferedImage img = ImageIO.read(new ByteArrayInputStream(imgBytes));
+                Image scaledImage = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+                ImageIcon scaledIcon = new ImageIcon(scaledImage);
+                JLabel imageLabel = new JLabel(scaledIcon);
+                imageLabel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-            decrementButton.addActionListener(e -> {
-                item.setQuantity(item.getQuantity()-1);
-                counts[finalI]--;
-                updateLabel(finalI);
-            });
-            dlist.add(new JLabel(item.getName()));
-            dlist.add(new JLabel(item.getDescription()));
-            dlist.add(new JLabel(String.valueOf(item.getPrice())));
-            dlist.add(countLabels[i]);
-            dlist.add(incrementButton);
-            dlist.add(decrementButton);
-            main.add(dlist);
-            i=i+1;
+                JPanel detailsPanel = new JPanel();
+                detailsPanel.setLayout(new BoxLayout(detailsPanel, BoxLayout.Y_AXIS));
+                JLabel dishNameLabel = new JLabel(item.getName(), SwingConstants.CENTER);
+                dishNameLabel.setFont(new Font("Sans Serif", Font.BOLD, 18));
+                dishNameLabel.setBorder(new EmptyBorder(10,10,10,10));
+
+                JPanel descPanel = new JPanel();
+                descPanel.setLayout(new BoxLayout(descPanel, BoxLayout.X_AXIS));
+                JLabel descLabel = new JLabel("Description: " + item.getDescription());
+                descLabel.setBorder(new EmptyBorder(10,10,10,10));
+                JLabel priceLabel = new JLabel("Price: $" + item.getPrice());
+                priceLabel.setBorder(new EmptyBorder(10,10,10,10));
+                descPanel.add(descLabel);
+                descPanel.add(priceLabel);
+                detailsPanel.add(dishNameLabel);
+                detailsPanel.add(descPanel);
+
+                JPanel dlist = new JPanel();
+                countLabels[i] = new JLabel(String.valueOf(counts[i]));
+                JButton incrementButton = new JButton("+");
+                JButton decrementButton = new JButton("-");
+                int finalI = i;
+
+                incrementButton.addActionListener(e -> {
+                    item.setQuantity(item.getQuantity()+1);
+                    counts[finalI]++;
+                    updateLabel(finalI);
+                });
+
+                decrementButton.addActionListener(e -> {
+                    item.setQuantity(item.getQuantity()-1);
+                    counts[finalI]--;
+                    updateLabel(finalI);
+                });
+
+                dlist.add(countLabels[i]);
+                dlist.add(incrementButton);
+                dlist.add(decrementButton);
+                i=i+1;
+
+                dishPanel.add(imageLabel);
+                dishPanel.add(detailsPanel);
+                dishPanel.add(dlist);
+
+                dishPanels.add(dishPanel);
+            }
+            catch (Exception e){
+                System.out.println("Something failed. Try again.");
+                e.printStackTrace();
+            }
         }
+        for (JPanel dishPanel: dishPanels) {
+            this.dishsPanel.add(dishPanel);
+        }
+        this.dishsPanel.invalidate();
+
+        JButton button = new JButton("Pay Bill");
+        button.addActionListener(e -> {
+            gotobill();
+        });
+        dishsPanel.add(button, BorderLayout.SOUTH);
     }
 
     private void updateLabel(int index) {
@@ -128,21 +168,28 @@ public class DishView extends JFrame implements ActionListener{
         String token = Application.getInstance().getToken();
         int id = Application.getInstance().getUserId();
         int rid = Application.getInstance().getRestaurantId();
-        List<Map<String, Object>> requestDataList = new ArrayList<>();
+        Map<String, Object> requestDataList = new HashMap<>();;
+        List<Map<String, Object>> dishes = new ArrayList<>();
+
+        requestDataList.put("restaurantId", Application.getInstance().getRestaurantId());
 
         for (Dish item: dish){
             if (item.getQuantity()>0){
                 Map<String, Object> dishData = new HashMap<>();
                 dishData.put("dishId", item.getDishId());
                 dishData.put("quantity", item.getQuantity());
-                requestDataList.add(dishData);
+                dishes.add(dishData);
             }
         }
+        requestDataList.put("dishes", dishes);
 
         try {
             dishController.createorder(token, id, rid, requestDataList);
         } catch (URISyntaxException | IOException | InterruptedException e) {
             e.printStackTrace(); // Handle exceptions appropriately
         }
+
+        Application.getInstance().getDishView().setVisible(false);
+        Application.getInstance().getBillView().setVisible(true);
     }
 }

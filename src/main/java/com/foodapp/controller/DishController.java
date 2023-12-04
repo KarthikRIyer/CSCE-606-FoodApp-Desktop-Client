@@ -2,6 +2,7 @@ package com.foodapp.controller;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.foodapp.Application;
 import com.foodapp.model.Dish;
 import com.foodapp.model.restuarant;
 import com.foodapp.util.JsonUtil;
@@ -37,9 +38,12 @@ public class DishController {
 
             if (jsonNode.isArray()) {
                 List<Dish> dish = new ArrayList<>();
+                String img = null;
 
                 for (JsonNode objNode : jsonNode) {
                     Dish edish = objectMapper.treeToValue(objNode, Dish.class);
+                    img = getimage(id,token,edish.getDishId());
+                    edish.setImage(img);
                     dish.add(edish);
                 }
                 return dish;
@@ -50,16 +54,11 @@ public class DishController {
         return null;
     }
 
-    public void createorder(String token, int id, int rid, List<Map<String, Object>> dish) throws URISyntaxException, IOException, InterruptedException{
+    public void createorder(String token, int id, int rid, Map<String, Object> dish) throws URISyntaxException, IOException, InterruptedException{
         URI targetURI = new URI(url + "/createOrder?userId="+String.valueOf(id)+"&token="+token);
-
-        Map<String, Object> requestBodyMap = new HashMap<>();
-        requestBodyMap.put("restaurantId", rid);
-        requestBodyMap.put("dishes", dish);
 
         ObjectMapper objectMapper = new ObjectMapper();
         String dishJson = objectMapper.writeValueAsString(dish);
-        System.out.println(dishJson);
 
         HttpRequest httpRequest = HttpRequest.newBuilder()
                 .uri(targetURI)
@@ -68,12 +67,32 @@ public class DishController {
 
         HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
 
-        // Handle the response as needed
-        if (response.statusCode() == 201) {
+        if (response.statusCode() == 200) {
             System.out.println("Dish added successfully!");
+            try {
+                ObjectMapper Mapper = new ObjectMapper();
+                JsonNode jsonNode = Mapper.readTree(response.body());
+
+                int orderId = jsonNode.get("orderId").asInt();
+                double cost = jsonNode.get("totalCost").asInt();
+                System.out.println(orderId);
+
+                Application.getInstance().setOrderId(orderId);
+                Application.getInstance().setTotalCost(cost);
+
+            } catch(Exception e) {
+                e.printStackTrace();
+            }
         } else {
             System.err.println("Failed to add dish. Status code: " + response.statusCode());
             System.err.println("Response body: " + response.body());
         }
+    }
+
+    private String getimage(int id, String token, int did) throws URISyntaxException, IOException, InterruptedException{
+        URI targetURI = new URI(url + "/dishImage?userId="+String.valueOf(id)+"&token="+token+"&dishId="+String.valueOf(did));
+        HttpRequest httpRequest = HttpRequest.newBuilder().uri(targetURI).GET().build();
+        HttpResponse<String> response = httpClient.send(httpRequest, HttpResponse.BodyHandlers.ofString());
+        return response.body();
     }
 }

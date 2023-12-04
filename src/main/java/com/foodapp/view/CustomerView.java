@@ -1,11 +1,15 @@
 package com.foodapp.view;
 
+import com.foodapp.model.Order;
+import com.foodapp.model.Restaurant;
 import com.foodapp.util.SpringUtilities;
 import com.foodapp.Application;
 import com.foodapp.controller.orderingController;
 import com.foodapp.model.restuarant;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
@@ -13,8 +17,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
@@ -31,6 +38,7 @@ public class CustomerView extends JFrame implements ActionListener {
     private DefaultTableModel tableModel;
     private orderingController OrderingController;
     private JPanel main;
+    private JPanel view;
     private DefaultTableModel items;
     private JTable tblItems;
     public CustomerView(orderingController OrderingController) {
@@ -52,12 +60,6 @@ public class CustomerView extends JFrame implements ActionListener {
         main.add(searchField);
         main.add(searchButton);
 
-        //String[] headers = {"Image", "Description", "Rating"};
-        //tableModel = new DefaultTableModel(null, headers);
-        //restaurantTable = new JTable(tableModel);
-        //int lastColumnIndex = restaurantTable.getColumnCount() - 1;
-        //restaurantTable.getColumnModel().getColumn(lastColumnIndex).setCellRenderer(new ImageRenderer());
-        //JScrollPane tableScrollPane = new JScrollPane(restaurantTable);
 
         ratingBox.setSelectedItem(rating[0]);
         cuisineBox.setSelectedItem(cuisine[0]);
@@ -71,6 +73,10 @@ public class CustomerView extends JFrame implements ActionListener {
                 6, 6);       //xPad, yPad
 
         this.getContentPane().add(main);
+        view = new JPanel();
+        view.setLayout(new BoxLayout(view, BoxLayout.Y_AXIS));
+        JScrollPane orderPane = new JScrollPane(view);
+        this.getContentPane().add(view);
         searchButton.addActionListener(this);
         ratingBox.addActionListener(this);
         cuisineBox.addActionListener(this);
@@ -143,93 +149,71 @@ public class CustomerView extends JFrame implements ActionListener {
     }
 
     private void updateTable(List<restuarant> res) {
-        items = new DefaultTableModel();
-        tblItems = new JTable(items);
-        JPanel linkPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        items.addColumn("ID");
-        items.addColumn("Name");
-        for (restuarant item: res){
-            Object[] row = new Object[2];
-            JLabel linkLabel = new JLabel();
-            JLabel name = new JLabel();
+        this.view.removeAll();
+        List<JPanel> orderPanels = new ArrayList<>();
+        for (restuarant item: res) {
+            try {
+                JPanel orderPanel = new JPanel();
+                orderPanel.setLayout(new BoxLayout(orderPanel, BoxLayout.X_AXIS));
 
-            linkLabel.setText("<html><a href='#'>" + item.getName() + "</a></html>");
+                int width = 200;
+                int height = 100;
+                String base64Image = item.getImage().split(",")[1];
+                byte[] imgBytes = Base64.getDecoder().decode(base64Image);
+                BufferedImage img = ImageIO.read(new ByteArrayInputStream(imgBytes));
+                Image scaledImage = img.getScaledInstance(width, height, Image.SCALE_SMOOTH);
+                ImageIcon scaledIcon = new ImageIcon(scaledImage);
+                JLabel imageLabel = new JLabel(scaledIcon);
+                imageLabel.setBorder(new EmptyBorder(10, 10, 10, 10));
 
-            String ltxt = "<html><a href='#'>" + item.getName() + "</a></html>";
-            linkLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-            linkLabel.setForeground(Color.BLUE);
-            linkLabel.addMouseListener(new java.awt.event.MouseAdapter() {
-                public void mouseClicked(java.awt.event.MouseEvent evt) {
-                    Application.getInstance().setRestaurantId(item.getRestaurantId());
-                    Application.getInstance().getCustomerView().setVisible(false);
-                    System.out.println(Application.getInstance().getRestaurantId());
-                    Application.getInstance().getDishView().setVisible(true);
-                }
-            });
-            linkPanel.add(linkLabel);
-            linkPanel.add(new JLabel(item.getName()));
-            linkPanel.add(new JLabel(String.valueOf(item.getRating())));
-            //row[0]=ltxt;
-            //row[1]=item.getName();
-            //items.addRow(row);
-            main.add(linkPanel);
-        }
-        //tblItems.getColumnModel().getColumn(0).setCellRenderer(new LinkRenderer());
-        //JScrollPane scrollPane = new JScrollPane(tblItems);
-        //main.add(scrollPane);
-    }
+                JPanel detailsPanel = new JPanel();
+                detailsPanel.setLayout(new BoxLayout(detailsPanel, BoxLayout.Y_AXIS));
+                JLabel linkLabel = new JLabel();
+                linkLabel.setText("<html><a href='#'>" + item.getName() + "</a></html>");
+                linkLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                linkLabel.setForeground(Color.BLUE);
+                linkLabel.addMouseListener(new java.awt.event.MouseAdapter() {
+                    public void mouseClicked(java.awt.event.MouseEvent evt) {
+                        Application.getInstance().setRestaurantId(item.getRestaurantId());
+                        Application.getInstance().getCustomerView().setVisible(false);
+                        System.out.println(Application.getInstance().getRestaurantId());
+                        Application.getInstance().getDishView().setVisible(true);
+                        Application.getInstance().getDishView().loadData();
+                    }
+                });
 
-    class LinkRenderer extends DefaultTableCellRenderer {
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+                JPanel descPanel = new JPanel();
+                descPanel.setLayout(new BoxLayout(descPanel, BoxLayout.X_AXIS));
+                JLabel descLabel = new JLabel(item.getDesc());
+                descLabel.setBorder(new EmptyBorder(10,10,10,10));
+                JLabel addrLabel = new JLabel("Address: " + item.getAddress());
+                addrLabel.setBorder(new EmptyBorder(10,10,10,10));
+                descPanel.add(descLabel);
+                descPanel.add(addrLabel);
+                detailsPanel.add(linkLabel);
+                detailsPanel.add(descPanel);
 
-            if (value != null) {
-                setText(value.toString());
-                setForeground(Color.BLUE);
-                setCursor(new Cursor(Cursor.HAND_CURSOR));
+                JPanel ratingPanel = new JPanel();
+                ratingPanel.setLayout(new BoxLayout(ratingPanel, BoxLayout.X_AXIS));
+                JLabel ratingLabel = new JLabel(String.valueOf(item.getRating()));
+                ratingLabel.setBorder(new EmptyBorder(10,10,10,10));
+                ratingPanel.add(ratingLabel);
+
+                orderPanel.add(imageLabel);
+                orderPanel.add(detailsPanel);
+                orderPanel.add(ratingPanel);
+
+                orderPanels.add(orderPanel);
             }
-
-            return this;
-        }
-    }
-
-    private JLabel createLink(String text) {
-        JLabel linkLabel = new JLabel("<html><u>" + text + "</u></html>");
-        linkLabel.setForeground(Color.BLUE);
-        linkLabel.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        return linkLabel;
-    }
-
-    private void openAnotherLayout(String restaurantName) {
-        System.out.println(restaurantName);
-    }
-
-    private ImageIcon getImageIconFromBase64(String base64p) {
-        try {
-            String base64 = base64p.split(",")[1];
-            byte[] imageBytes = Base64.getDecoder().decode(base64);
-            Image image = Toolkit.getDefaultToolkit().createImage(imageBytes);
-            Image scaledImage = image.getScaledInstance(50, 50, Image.SCALE_SMOOTH); // Adjust the size as needed
-            return new ImageIcon(scaledImage);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private class ImageRenderer extends DefaultTableCellRenderer {
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
-            JLabel label = new JLabel();
-            label.setHorizontalAlignment(JLabel.CENTER);
-
-            if (value instanceof ImageIcon) {
-                label.setIcon((ImageIcon) value);
+            catch (Exception e){
+                System.out.println("Something failed. Try again.");
+                e.printStackTrace();
             }
-
-            return label;
         }
+        for (JPanel orderPanel: orderPanels) {
+            this.view.add(orderPanel);
+        }
+        this.view.invalidate();
     }
-
 
 }

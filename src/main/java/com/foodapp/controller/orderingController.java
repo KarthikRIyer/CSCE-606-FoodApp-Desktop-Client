@@ -44,10 +44,11 @@ public class orderingController {
 
             if (jsonNode.isArray()) {
                 List<restuarant> res = new ArrayList<>();
-
+                String img = null;
                 for (JsonNode objNode : jsonNode) {
-                    // Deserialize each object in the array
                     restuarant eres = objectMapper.treeToValue(objNode, restuarant.class);
+                    img = getimage(uid,token,eres.getRestaurantId());
+                    eres.setImage(img);
                     res.add(eres);
                 }
                 return res;
@@ -70,10 +71,11 @@ public class orderingController {
 
             if (jsonNode.isArray()) {
                 List<restuarant> res = new ArrayList<>();
-
+                String img = null;
                 for (JsonNode objNode : jsonNode) {
-                    // Deserialize each object in the array
                     restuarant eres = objectMapper.treeToValue(objNode, restuarant.class);
+                    img = getimage(uid,token,eres.getRestaurantId());
+                    eres.setImage(img);
                     res.add(eres);
                 }
                 return res;
